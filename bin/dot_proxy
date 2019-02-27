@@ -27,15 +27,16 @@ parser.add_argument('--backend-hostname', default=DEFAULT_BACKEND,
                     help='Backend hostname. Default: "{}"'.format(DEFAULT_BACKEND))
 parser.add_argument('--backend-port', type=int, default=DEFAULT_BACKEND_PORT,
                     help='Backend port. Default: "{}"'.format(DEFAULT_BACKEND_PORT))
-
-args = parser.parse_args()
+parser.add_argument('-d', '--debug', action='store_true', help="DEBUG log level")
 
 
 async def main():
     logging.basicConfig(format=FORMAT)
+    args = parser.parse_args()
 
     logger = logging.getLogger("aio_dot_proxy")
-    logger.setLevel(logging.DEBUG)
+    log_level = logging.DEBUG if args.debug else logging.INFO
+    logger.setLevel(log_level)
     logger.info("Starting aio-dot-proxy server")
 
     loop = asyncio.get_event_loop()

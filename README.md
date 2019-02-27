@@ -63,6 +63,9 @@ My approach was really simple so I think there are lot of improvements:
 
 The default settings are using cloudflare DNS-over-TLS servers. You can override it running
 
-    `docker run -p 127.0.0.2:53:8888 aio-dot-proxy:test --backend-hostname dns.quad9.net --backend-port 853`
+    ```
+     docker run -p 127.0.0.2:53:8853 -p 127.0.0.2:53:9953/udp aio-dot-proxy:test --backend-hostname dns.quad9.net --backend-port 853
+
+    ```
 
 

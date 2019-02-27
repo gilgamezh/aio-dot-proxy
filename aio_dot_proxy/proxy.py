@@ -34,7 +34,6 @@ class DOTProxy:
         reader, writer = await asyncio.open_connection(
             self.server_hostname, self.server_port, ssl=self._ssl_context)
         logger.debug("Quering backend server with %r", raw_data)
-
         writer.write(raw_data)
 
         result = await reader.read(1024)

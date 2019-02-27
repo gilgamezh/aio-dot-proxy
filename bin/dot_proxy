@@ -1,11 +1,31 @@
 #!/usr/bin/env python3
 
+import argparse
 import asyncio
 import logging
 
 from aio_dot_proxy.proxy import DOTProxy
 
 FORMAT = "%(asctime)s %(name)-4s %(process)d %(levelname)-6s %(funcName)-8s %(message)s"
+
+
+DEFAULT_BACKEND = "one.one.one.one"
+DEFAULT_BACKEND_PORT = 853
+
+DEFAULT_TCP_PORT = 8888
+
+
+parser = argparse.ArgumentParser(description='DNS-over-TLS proxy')
+parser.add_argument('--listen-ip', default='0.0.0.0',
+                    help='Listen IP to the server. Default: 0.0.0.0')
+parser.add_argument('--tcp-port', type=int, default=DEFAULT_TCP_PORT,
+                    help='TCP port to listen. Default: {}'.format(DEFAULT_TCP_PORT))
+parser.add_argument('--backend-hostname', default=DEFAULT_BACKEND,
+                    help='Backend hostname. Default: "{}"'.format(DEFAULT_BACKEND))
+parser.add_argument('--backend-port', type=int, default=DEFAULT_BACKEND_PORT,
+                    help='Backend port. Default: "{}"'.format(DEFAULT_BACKEND_PORT))
+
+args = parser.parse_args()
 
 
 async def main():
@@ -15,9 +35,9 @@ async def main():
     logger.setLevel(logging.DEBUG)
     logger.info("Starting aio-dot-proxy server")
 
-    dot_client = DOTProxy("one.one.one.one", 853)
+    dot_client = DOTProxy(args.backend_hostname, args.backend_port)
 
-    server = await asyncio.start_server(dot_client.handle_dns_query, '0.0.0.0', 8888)
+    server = await asyncio.start_server(dot_client.handle_dns_query, args.listen_ip, args.tcp_port)
     addr = server.sockets[0].getsockname()
     logger.info("DNS-over-TLS proxy started. listening on %s", addr)
 

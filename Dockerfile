@@ -5,4 +5,4 @@ COPY . /usr/src/aio_dot_proxy
 WORKDIR /usr/src/aio_dot_proxy 
 RUN python3 setup.py install
 
-CMD dot_proxy.py
+ENTRYPOINT ["/usr/local/bin/dot_proxy"]

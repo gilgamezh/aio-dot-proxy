@@ -41,12 +41,18 @@ My approach was really simple so I think there are lot of improvements:
 
 - After the build just run the image with: 
 
-    `docker run -p 127.0.0.2:53:8888 aio-dot-proxy:dev`
+    `docker run -p 127.0.0.2:53:8853 -p 127.0.0.2:53:9953/udp aio-dot-proxy:test`
 
 - Test it using `dig`
 
     ``` 
-    ~  dig +tcp @127.0.0.2  gilgamezh.me +short
+    ~  dig @127.0.0.2  gilgamezh.me +short +tcp  # TCP
+        185.199.110.153
+        185.199.111.153
+        185.199.108.153
+        185.199.109.153
+    
+    ~  dig @127.0.0.2  gilgamezh.me +short  # UDP
         185.199.110.153
         185.199.111.153
         185.199.108.153

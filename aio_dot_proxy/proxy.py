@@ -2,6 +2,7 @@ import asyncio
 import logging
 import socket
 import ssl
+import struct
 
 logger = logging.getLogger(__name__)
 
@@ -59,3 +60,23 @@ class DOTProxy:
 
         logger.info("Close the connection with %s", addr)
         writer.close()
+
+
+class DOTProxyWithUDP(DOTProxy):
+    """Support both TCP and UDP"""
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    async def async_handle(self, data, addr):
+        # add two byte length field
+        data = struct.pack(">H", len(data)) + data
+        result = await self.query_backend_server(data)
+        self.transport.sendto(result[2:], addr)  # send the response removing the length field.
+
+    def datagram_received(self, data, addr):
+        logger.info("New (UDP) query from %s", addr)
+        logger.debug("Query data: %r", data)
+        loop = asyncio.get_event_loop()
+        logger.debug("creating asyncio.Task to handle UDP request")
+        loop.create_task(self.async_handle(data, addr))

@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import logging
 
-from aio_dot_proxy.proxy import DOTProxy
+from aio_dot_proxy.proxy import DOTProxy, DOTProxyWithUDP
 
 FORMAT = "%(asctime)s %(name)-4s %(process)d %(levelname)-6s %(funcName)-8s %(message)s"
 
@@ -12,7 +12,8 @@ FORMAT = "%(asctime)s %(name)-4s %(process)d %(levelname)-6s %(funcName)-8s %(me
 DEFAULT_BACKEND = "one.one.one.one"
 DEFAULT_BACKEND_PORT = 853
 
-DEFAULT_TCP_PORT = 8888
+DEFAULT_TCP_PORT = 8853
+DEFAULT_UDP_PORT = 9953
 
 
 parser = argparse.ArgumentParser(description='DNS-over-TLS proxy')
@@ -20,6 +21,8 @@ parser.add_argument('--listen-ip', default='0.0.0.0',
                     help='Listen IP to the server. Default: 0.0.0.0')
 parser.add_argument('--tcp-port', type=int, default=DEFAULT_TCP_PORT,
                     help='TCP port to listen. Default: {}'.format(DEFAULT_TCP_PORT))
+parser.add_argument('--udp-port', type=int, default=DEFAULT_UDP_PORT,
+                    help='UDP port to listen. Default: {}'.format(DEFAULT_UDP_PORT))
 parser.add_argument('--backend-hostname', default=DEFAULT_BACKEND,
                     help='Backend hostname. Default: "{}"'.format(DEFAULT_BACKEND))
 parser.add_argument('--backend-port', type=int, default=DEFAULT_BACKEND_PORT,
@@ -35,12 +38,22 @@ async def main():
     logger.setLevel(logging.DEBUG)
     logger.info("Starting aio-dot-proxy server")
 
+    loop = asyncio.get_event_loop()
+
     dot_client = DOTProxy(args.backend_hostname, args.backend_port)
 
-    server = await asyncio.start_server(dot_client.handle_dns_query, args.listen_ip, args.tcp_port)
-    addr = server.sockets[0].getsockname()
-    logger.info("DNS-over-TLS proxy started. listening on %s", addr)
+    server = await asyncio.start_server(dot_client.handle_dns_query,
+                                        args.listen_ip, args.tcp_port, loop=loop)
 
+    logger.info("DNS-over-TLS proxy started. listening on (TCP) %s:%s",
+                args.listen_ip, args.tcp_port)
+
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: DOTProxyWithUDP(args.backend_hostname, args.backend_port),
+        local_addr=(args.listen_ip, args.udp_port)
+    )
+    logger.info("DNS-over-TLS proxy started. listening on (UDP) %s:%s",
+                args.listen_ip, args.udp_port)
     async with server:
         await server.serve_forever()
 
